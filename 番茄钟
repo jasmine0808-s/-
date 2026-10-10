@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自定义自习番茄钟</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+body{background:#2c3e50;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.timer-box{text-align:center;width:100%;max-width:500px}
+.time{font-size:8rem;font-weight:bold;margin:20px 0}
+.btn-group button{padding:12px 24px;margin:6px;border:none;border-radius:8px;font-size:18px;cursor:pointer}
+#start{background:#27ae60;color:white}
+#pause{background:#f39c12;color:white}
+#reset{background:#e74c3c;color:white}
+.mode-group{margin-bottom:20px}
+.mode-group button{padding:8px 16px;margin:4px;border-radius:6px;border:none}
+.input-area{margin-bottom:16px}
+.input-area input{width:100px;padding:8px;font-size:18px;text-align:center;border-radius:6px;border:none;color:#222}
+.input-area button{padding:8px 14px;margin-left:6px;border-radius:6px;border:none;background:#9b59b6;color:white;font-size:16px;cursor:pointer}
+.count{margin-top:20px;font-size:20px}
+</style>
+</head>
+<body>
+<div class="timer-box">
+  <div class="input-area">
+    <input type="number" id="customMin" placeholder="分钟" min="1">
+    <button onclick="setCustomTime()">自定义时长</button>
+  </div>
+  <div class="mode-group">
+    <button onclick="setTime(25)">番茄25分钟</button>
+    <button onclick="setTime(5)">短休息5分钟</button>
+    <button onclick="setTime(15)">长休息15分钟</button>
+  </div>
+  <div class="time" id="timeText">25:00</div>
+  <div class="btn-group">
+    <button id="start" onclick="startTimer()">开始</button>
+    <button id="pause" onclick="pauseTimer()">暂停</button>
+    <button id="reset" onclick="resetTimer()">重置</button>
+  </div>
+  <div class="count">✅ 完成番茄数：<span id="tomatoCount">0</span></div>
+</div>
+
+<audio id="alertAudio" src="https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3">
+
+<script>
+let totalSeconds = 25 * 60;
+let remain = totalSeconds;
+let timerId = null;
+// 读取本地保存的番茄数量
+let tomatoCount = localStorage.getItem('tomatoCount') || 0;
+document.getElementById('tomatoCount').innerText = tomatoCount;
+
+// 渲染时间
+function render(){
+  let m = Math.floor(remain / 60);
+  let s = remain % 60;
+  document.getElementById("timeText").innerText = String(m).padStart(2,'0') + ":" + String(s).padStart(2,'0');
+}
+
+// 预设时间
+function setTime(min){
+  stop();
+  totalSeconds = min * 60;
+  remain = totalSeconds;
+  render();
+}
+
+// 自定义输入时长
+function setCustomTime(){
+  stop();
+  const inputVal = document.getElementById("customMin").value;
+  let min = parseInt(inputVal);
+  if(isNaN(min) || min < 1){
+    alert("请输入大于0的数字！");
+    return;
+  }
+  totalSeconds = min * 60;
+  remain = totalSeconds;
+  render();
+  document.getElementById("customMin").value = "";
+}
+
+function startTimer(){
+  if(timerId) return;
+  timerId = setInterval(()=>{
+    remain--;
+    render();
+    if(remain <= 0){
+      pauseTimer();
+      document.getElementById('alertAudio').play();
+      alert("时间到！");
+      // 只有25分钟番茄才计数
+      if(totalSeconds === 25*60){
+        tomatoCount++;
+        localStorage.setItem('tomatoCount', tomatoCount);
+        document.getElementById('tomatoCount').innerText = tomatoCount;
+      }
+    }
+  },1000);
+}
+function pauseTimer(){
+  stop();
+}
+function resetTimer(){
+  stop();
+  remain = totalSeconds;
+  render();
+}
+function stop(){
+  clearInterval(timerId);
+  timerId = null;
+}
+render();
+</script>
+</body>
+</html>
